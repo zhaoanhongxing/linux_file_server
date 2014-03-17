@@ -27,6 +27,8 @@ struct CHelloWorld_Service
 		m_acceptor.async_accept(*psocket,
 				boost::bind(&CHelloWorld_Service::accept_handler,this,psocket,_1));
 	}
+	
+	
 	//有客户端连接时accept_handler触发
 	void accept_handler(boost::shared_ptr<tcp::socket>psocket, error_code ec)
 	{
@@ -35,35 +37,31 @@ struct CHelloWorld_Service
 		start();
 		//显示远程IP
 		std::cout<<psocket->remote_endpoint().address()<<std::endl;
-		//发送消息(非阻塞)
 
 		cout<<"begin write\n";
 		fileTile fT;	
 		char *pBuf = (char *)malloc(sizeof(fileTile));
 		memset(pBuf,0,sizeof(fileTile));
 
-		size_t len = psocket->read_some(buffer((void *)pBuf, sizeof(fileTile)), ec);
-		cout<<"recv length:"<<len<<endl;
-		memcpy(&fT, pBuf, len);
-		double dRecvSize = 0.0;
+		//size_t len = psocket->read_some(buffer((void *)pBuf, sizeof(fileTile)), ec);
+		//cout<<"recv length:"<<len<<endl;
+		//memcpy(&fT, pBuf, len);
+		//double dRecvSize = 0.0;
 		double dWriteSize = 0.0;
-		dRecvSize += fT.tileSize;
+		//dRecvSize += fT.tileSize;
 
 
 
 		FILE *pFd = fopen(fT.fileName, "wb");
-		fwrite(fT.tileData,sizeof(char),fT.tileSize,pFd);
-		memset(pBuf,0,sizeof(fileTile));
-		//while(dRecvSize < fT.fileSize)
-		//{
-			//cout<<"enter while"<<endl;
-			//写入文件
-			psocket->async_read(buffer((void *)pBuf, sizeof(fileTile)),
-				boost::bind(&CHelloWorld_Service::read_handler,this,psocket, &pBuf, &fT, &pFd, &dWriteSize));
-			dRecvSize += fT.tileSize;
-		//}
+		//fwrite(fT.tileData,sizeof(char),fT.tileSize,pFd);
+		//memset(pBuf,0,sizeof(fileTile));
+		
+		psocket->async_read(buffer((void *)pBuf, sizeof(fileTile)),
+			boost::bind(&CHelloWorld_Service::read_handler,this,psocket, &pBuf, &fT, &pFd, &dWriteSize));
+		//dRecvSize += fT.tileSize;
 
 	}
+	
 	
 	//异步读操作完成后read_handler触发
 	void read_handler(boost::shared_ptr<tcp::socket>psocket,
@@ -80,16 +78,19 @@ struct CHelloWorld_Service
 		memset(*pBuf,0,sizeof(fileTile));
 		error_code ec;
 		psocket->write_some(buffer("ok"), ec);//发送接收应答，给客户端
-
 		cout<<"send ok to windows\n";
 
 		*dWriteSize += pFileTile->tileSize;
-
-		if(*dWriteSize == pFileTile->fileSize)
+		if(*dWriteSize == pFileTile->fileSize)//获取全部数据，释放资源，关闭文件
 		{
 
 			free(*pBuf);
 			fclose(*pFd);
+		}
+		else//再次启动异步读操作
+		{
+			psocket->async_read(buffer((void *)*pBuf, sizeof(fileTile)),
+				boost::bind(&CHelloWorld_Service::read_handler,this,psocket, pBuf, pFileTile, pFd, dWriteSize));
 		}
 	}
 	//异步写操作完成后write_handler触发
