@@ -49,7 +49,7 @@ struct CHelloWorld_Service
 
 		FILE *pFd = fopen(fT.fileName, "wb");
 		
-		boost::asio::async_read(psocket,boost::asio::buffer((void *)pBuf, sizeof(fileTile)),
+		boost::asio::async_read(*psocket,boost::asio::buffer((void *)pBuf, sizeof(fileTile)),
 			boost::bind(&CHelloWorld_Service::read_handler,this,psocket, &pBuf, &fT, &pFd, &dWriteSize));
 
 	}
@@ -61,6 +61,7 @@ struct CHelloWorld_Service
 	{
 		cout<<"enter read_handler"<<endl;
 		memcpy(pFileTile, *pBuf, sizeof(fileTile));
+		cout<<"begin fwrite\n";
 		int i = fwrite(pFileTile->tileData,sizeof(char),pFileTile->tileSize,*pFd);
 		if(i != pFileTile->tileSize)
 		{
@@ -81,8 +82,10 @@ struct CHelloWorld_Service
 		}
 		else//再次启动异步读操作
 		{
+			boost::asio::async_read(*psocket,boost::asio::buffer((void *)pBuf, sizeof(fileTile)),
+				boost::bind(&CHelloWorld_Service::read_handler,this,psocket, pBuf, pFileTile, pFd, dWriteSize));
 
-		}
+		} 
 	}
 	//异步写操作完成后write_handler触发
 	void write_handler(boost::shared_ptr<std::string>pstr,error_code ec,
