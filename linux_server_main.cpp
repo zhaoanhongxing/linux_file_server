@@ -17,11 +17,11 @@ struct CHelloWorld_Service
 {
 	CHelloWorld_Service(io_service &iosev)
 		:m_iosev(iosev), m_acceptor(iosev, 
-				tcp::endpoint(tcp::v4(),1000 )){}
+ 				tcp::endpoint(tcp::v4(),1000 )){}
 
 	void start()
 	{
-		//开始等待连接（非阻塞）
+ 		//开始等待连接（非阻塞）
 		boost::shared_ptr<tcp::socket> psocket(new tcp::socket(m_iosev));
 		//触发的事件只有error_code参数，所以用boost::bind把socket绑定进去
 		m_acceptor.async_accept(*psocket,
@@ -43,22 +43,14 @@ struct CHelloWorld_Service
 		char *pBuf = (char *)malloc(sizeof(fileTile));
 		memset(pBuf,0,sizeof(fileTile));
 
-		//size_t len = psocket->read_some(buffer((void *)pBuf, sizeof(fileTile)), ec);
-		//cout<<"recv length:"<<len<<endl;
-		//memcpy(&fT, pBuf, len);
-		//double dRecvSize = 0.0;
 		double dWriteSize = 0.0;
-		//dRecvSize += fT.tileSize;
 
 
 
 		FILE *pFd = fopen(fT.fileName, "wb");
-		//fwrite(fT.tileData,sizeof(char),fT.tileSize,pFd);
-		//memset(pBuf,0,sizeof(fileTile));
 		
-		psocket->async_read(buffer((void *)pBuf, sizeof(fileTile)),
+		boost::asio::async_read(psocket,boost::asio::buffer((void *)pBuf, sizeof(fileTile)),
 			boost::bind(&CHelloWorld_Service::read_handler,this,psocket, &pBuf, &fT, &pFd, &dWriteSize));
-		//dRecvSize += fT.tileSize;
 
 	}
 	
@@ -89,8 +81,7 @@ struct CHelloWorld_Service
 		}
 		else//再次启动异步读操作
 		{
-			psocket->async_read(buffer((void *)*pBuf, sizeof(fileTile)),
-				boost::bind(&CHelloWorld_Service::read_handler,this,psocket, pBuf, pFileTile, pFd, dWriteSize));
+
 		}
 	}
 	//异步写操作完成后write_handler触发
@@ -100,7 +91,7 @@ struct CHelloWorld_Service
 		if(ec)
 		std::cout<<"发送失败!"<<std::endl;
 		else
-		std::cout<<*pstr<<"已发送"<<std::endl;
+ 		std::cout<<*pstr<<"已发送"<<std::endl;
 	}
 	private:
 	io_service &m_iosev;
@@ -114,6 +105,6 @@ int main()
 	//开始等待连接
 	sev.start();
 	iosev.run();
-	return 0;
+ 	return 0;
 
 }
