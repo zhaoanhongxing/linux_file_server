@@ -54,26 +54,17 @@ struct CHelloWorld_Service
 		FILE *pFd = fopen(fT.fileName, "wb");
 		fwrite(fT.tileData,sizeof(char),fT.tileSize,pFd);
 		memset(pBuf,0,sizeof(fileTile));
-		while(dRecvSize < fT.fileSize)
-		{
+		//while(dRecvSize < fT.fileSize)
+		//{
 			//cout<<"enter while"<<endl;
 			//写入文件
-			psocket->async_read_some(buffer((void *)pBuf, sizeof(fileTile)),
+			psocket->async_read(buffer((void *)pBuf, sizeof(fileTile)),
 				boost::bind(&CHelloWorld_Service::read_handler,this,psocket, &pBuf, &fT, &pFd, &dWriteSize));
 			dRecvSize += fT.tileSize;
-		}
+		//}
 
 	}
 	
-	//异步写操作完成后write_handler触发
-	void write_handler(boost::shared_ptr<std::string>pstr,error_code ec,
-		size_t bytes_transferred)
-	{
-		if(ec)
-		std::cout<<"发送失败!"<<std::endl;
-		else
-		std::cout<<*pstr<<"已发送"<<std::endl;
-	}
 	//异步读操作完成后read_handler触发
 	void read_handler(boost::shared_ptr<tcp::socket>psocket,
 			char **pBuf, fileTile *pFileTile, FILE **pFd, double *dWriteSize)
@@ -100,6 +91,15 @@ struct CHelloWorld_Service
 			free(*pBuf);
 			fclose(*pFd);
 		}
+	}
+	//异步写操作完成后write_handler触发
+	void write_handler(boost::shared_ptr<std::string>pstr,error_code ec,
+		size_t bytes_transferred)
+	{
+		if(ec)
+		std::cout<<"发送失败!"<<std::endl;
+		else
+		std::cout<<*pstr<<"已发送"<<std::endl;
 	}
 	private:
 	io_service &m_iosev;
